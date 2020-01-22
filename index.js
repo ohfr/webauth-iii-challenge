@@ -20,7 +20,8 @@ server.use(cors());
 const verifyToken = async (req, res, next) => {    
     try{
         const token = req.headers.authorization;
-        const decoded = jwt.verify(token, secrets.jwt);
+        const decoded = jwt.verify(token, secrets.jwtSecret);
+        req.decoded = decoded.subject;
       next();
     } catch(err) {
         next(err);
@@ -52,8 +53,11 @@ server.post("/api/register", async (req, res, next) => {
 
 server.post("/api/login", async(req, res, next) => {
     try {
+        if (!req.body.username || !req.body.password) {
+            return res.status(400).json({ message: "Missing credentials "})
+        }
         const { username, password } = req.body;
-        const user = await db.findBy({ username }).first();
+        const user = await db.findBy({ username })
 
         const passwordValid = bcrypt.compareSync(password, user.password);
 
@@ -70,12 +74,7 @@ server.post("/api/login", async(req, res, next) => {
 
 server.get("/api/users", verifyToken, async (req, res, next) => {
     try {
-        if (req.decoded) {
-            res.json(await db.find());   
-        } else {
-            console.log("no token")
-        }
-
+        res.json(await db.find());
     } catch(err) {
         next(err);
     }
@@ -85,7 +84,7 @@ server.get("/api/users", verifyToken, async (req, res, next) => {
 server.use((err, req, res, next) => {
     console.log(err);
 
-    req.status(500).json({message: "Something went wrong"});
+    res.status(500).json({message: "Something went wrong"});
 });
 
 server.listen(PORT, () => {

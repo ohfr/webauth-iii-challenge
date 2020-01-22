@@ -19,7 +19,7 @@ const findById = (id) => {
 };
 
 const findBy = (filter) => {
-    return db("user").where(filter).select("username", "password");
+    return db("user").where(filter).first("id", "username", "password");
 }
 
 module.exports = {
